@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Online Payment Fraud Detection</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="card fade-in">
+      <header class="card-header">
+        <div>
+          <h1>💳 Online Payment Fraud Detection</h1>
+          <p class="subtitle">Check your transaction with ML + rule-based verification.</p>
+        </div>
+        <div class="sample-controls">
+          <button id="loadFraudBtn" class="btn btn-danger bounce">Load Fraud Sample</button>
+          <button id="loadLegitBtn" class="btn btn-success bounce">Load Legit Sample</button>
+          <label class="auto-label"><input id="autoPredict" type="checkbox" /> Auto-predict</label>
+          <button id="themeToggle" class="btn btn-secondary bounce">🌙</button>
+        </div>
+      </header>
+
+      <form id="txForm" method="post" action="/predict" class="form">
+        <div class="grid">
+          <div class="field">
+            <label>Amount</label>
+            <input name="amount" id="amount" type="number" step="any" required />
+          </div>
+          <div class="field">
+            <label>Sender Old Balance</label>
+            <input name="oldbalanceOrg" id="oldbalanceOrg" type="number" step="any" required />
+          </div>
+          <div class="field">
+            <label>Sender New Balance</label>
+            <input name="newbalanceOrig" id="newbalanceOrig" type="number" step="any" required />
+          </div>
+          <div class="field">
+            <label>Receiver Old Balance</label>
+            <input name="oldbalanceDest" id="oldbalanceDest" type="number" step="any" required />
+          </div>
+          <div class="field">
+            <label>Receiver New Balance</label>
+            <input name="newbalanceDest" id="newbalanceDest" type="number" step="any" required />
+          </div>
+          <div class="field">
+            <label>Transaction Type</label>
+            <select name="type" id="type">
+              <option value="TRANSFER">TRANSFER</option>
+              <option value="CASH_OUT">CASH_OUT</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="predictBtn" type="submit" class="btn btn-primary pulse">Predict</button>
+        </div>
+      </form>
+
+      {% if result %}
+      <section class="result-wrap slide-up">
+        <div class="result-box {{ 'fraud' if result.startswith('🚨') else 'legit' }}">
+          <div class="result-icon">{{ '🚨' if result.startswith('🚨') else '✅' }}</div>
+          <div class="result-content">
+            <h2 class="result-title">{{ result }}</h2>
+            {% if probability %}
+              <div class="prob">Confidence: <strong>{{ probability }}</strong></div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if flags %}
+        <div class="flags">
+          <h3>Rule Flags</h3>
+          <ul>
+            {% for f in flags %}
+              <li>{{ f }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      <footer class="card-footer">
+        <small>Tip: Use sample buttons to auto-fill known transactions quickly.</small>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+  const fraudSample = {
+    amount: 10000,
+    oldbalanceOrg: 0,
+    newbalanceOrig: 0,
+    oldbalanceDest: 0,
+    newbalanceDest: 10000,
+    type: "TRANSFER"
+  };
+
+  const legitSample = {
+    amount: 2000,
+    oldbalanceOrg: 8000,
+    newbalanceOrig: 6000,
+    oldbalanceDest: 3000,
+    newbalanceDest: 5000,
+    type: "TRANSFER"
+  };
+
+  function fillForm(sample, autoSubmit=false) {
+    for (const key in sample) {
+      document.getElementById(key).value = sample[key];
+    }
+    if (autoSubmit) {
+      setTimeout(() => document.getElementById('predictBtn').click(), 400);
+    }
+  }
+
+  document.getElementById('loadFraudBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    const auto = document.getElementById('autoPredict').checked;
+    fillForm(fraudSample, auto);
+  });
+
+  document.getElementById('loadLegitBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    const auto = document.getElementById('autoPredict').checked;
+    fillForm(legitSample, auto);
+  });
+
+  // 🌗 Theme Toggle
+  const toggleBtn = document.getElementById('themeToggle');
+  const htmlEl = document.documentElement;
+
+  // Load saved theme from localStorage
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    htmlEl.classList.add('light');
+    toggleBtn.textContent = '☀️';
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    htmlEl.classList.toggle('light');
+    const isLight = htmlEl.classList.contains('light');
+    toggleBtn.textContent = isLight ? '☀️' : '🌙';
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  });
+
+</script>
+</body>
+</html>
